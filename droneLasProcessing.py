@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This makes a digital surface model (DSM), digital elevation model (DEM), and
 canopy height model (CHM) from a LAZ file point cloud produced by structure from

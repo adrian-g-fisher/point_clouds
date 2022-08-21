@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 This interpolates a canopy height model (chm) from a maximum height (maxh)
 image. It also uses a ground return image so that it can determine the extent of
@@ -17,8 +16,6 @@ Shamsoddini, A., Turner, R., & Trinder, J.C. (2013). Improving lidar-based
 forest structure mapping with crown-level pit removal. Journal of Spatial
 Science, 58, 29-51, http://dx.doi.org/10.1080/14498596.2012.759092
 """
-
-from __future__ import print_function, division
 
 import sys
 import os
@@ -143,12 +140,12 @@ def make_chm(info, inputs, outputs, otherargs):
                 chm = maxh
         
         # Set nodata pixels
-        pits[grd == -999] = 0
-        nv[grd == -999] = -999
-        si[grd == -999] = -999
-        chm[grd == -999] = -999
-        meanCHM[grd == -999] = -999
-        gn[grd == -999] = 0
+        #pits[grd == -999] = 0
+        #nv[grd == -999] = -999
+        #si[grd == -999] = -999
+        #chm[grd == -999] = -999
+        #meanCHM[grd == -999] = -999
+        #gn[grd == -999] = 0
     
     else:
         nv = np.zeros_like(chm) - 999
@@ -157,7 +154,7 @@ def make_chm(info, inputs, outputs, otherargs):
         pits = np.zeros_like(chm)
         gn = np.zeros_like(chm)
     
-    grd[grd == -999] = 0
+    #grd[grd == -999] = 0
     
     outputs.nv = np.array([nv]).astype(np.float32)
     outputs.si = np.array([si]).astype(np.float32)
@@ -177,20 +174,17 @@ def run_maxh2chm(maxh_image, grd_image, chm_image):
     infiles.grd = grd_image
     outfiles = applier.FilenameAssociations()
     outfiles.chm = chm_image
-    outfiles.chmwithpits = chm_image.replace('chm', 'chmwithpits')
-    outfiles.nv = chm_image.replace('chm', 'nv')
-    outfiles.si = chm_image.replace('chm', 'si')
-    outfiles.pits = chm_image.replace('chm', 'pits')
-    outfiles.mask = chm_image.replace('chm', 'mask')
-    outfiles.mean = chm_image.replace('chm', 'mean')
-    outfiles.gn = chm_image.replace('chm', 'gn')
+    outfiles.chmwithpits = chm_image.replace('chm.tif', 'chmwithpits.tif')
+    outfiles.nv = chm_image.replace('chm.tif', 'nv.tif')
+    outfiles.si = chm_image.replace('chm.tif', 'si.tif')
+    outfiles.pits = chm_image.replace('chm.tif', 'pits.tif')
+    outfiles.mask = chm_image.replace('chm.tif', 'mask.tif')
+    outfiles.mean = chm_image.replace('chm.tif', 'mean.tif')
+    outfiles.gn = chm_image.replace('chm.tif', 'gn.tif')
     controls = applier.ApplierControls()
     controls.setStatsIgnore(-999)
     controls.setOverlap(11)
-    
-    if chm_image[-3:] == "tif":
-        controls.setOutputDriverName('GTiff')
-    
+    controls.setOutputDriverName('GTiff')
     otherargs = applier.OtherInputs()
     applier.apply(make_chm, infiles, outfiles, otherargs, controls)
 
@@ -203,11 +197,11 @@ def getCmdargs():
             description=("Creates a canopy height model from maximum height " +
                          "and ground return images"))
     p.add_argument("-m", "--maxh_image", dest="maxh_image", default=None,
-                   help=("Maximum height image"))
+                   help=("Maximum height image (TIF)"))
     p.add_argument("-g", "--grd_image", dest="grd_image", default=None,
-                   help=("Ground return image"))
+                   help=("Ground return image (TIF)"))
     p.add_argument("-c", "--chm_image", dest="chm_image", default=None,
-                   help=("Canopy height model image"))
+                   help=("Canopy height model image (TIF)"))
     cmdargs = p.parse_args()
     if (cmdargs.maxh_image is None or
         cmdargs.grd_image is None or
