@@ -8,14 +8,13 @@ import os
 import sys
 import numpy
 import argparse
+import laspy
+import pynninterp
 from numba import jit
 from osgeo import gdal
 from osgeo import osr
 from scipy import ndimage
-from pylidar import lidarprocessor
-from pylidar.lidarformats import generic
-from pylidar.toolbox import interpolation
-from pylidar.toolbox.grdfilters import pmf
+from scipy import interpolate
 
 
 def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
@@ -30,7 +29,11 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     chmFile = os.path.join(outDir, r'%s_chm.tif'%projName)
     
     # Read in the point cloud and calculate image extents
-    points = readLidarPoints(lazFile, colNames=['X', 'Y', 'Z'])
+    with laspy.open(lazFile) as fh:
+        las = fh.read()
+    points = numpy.rec.fromarrays([las.x, las.y, las.z],
+                                   names=['X', 'Y', 'Z'],
+                                   formats = ['<f8', '<f8', '<f8'])
     (x, y, z) = (points['X'], points['Y'], points['Z'])
     minX, maxX, minY, maxY, minZ, maxZ = get_mmXYZ(x,y,z)
     if minX == int(minX):
@@ -40,9 +43,7 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     tileXsize = numpy.ceil(maxX) - int(minX)
     tileYsize = numpy.ceil(maxY) - int(minY)
     nRows = int(numpy.ceil(tileYsize / pixelSize))
-    nCols = int(numpy.ceil(tileXsize / pixelSize))   
-    info = generic.getLidarFileInfo(lazFile)
-    inFormat = info.getDriverName()
+    nCols = int(numpy.ceil(tileXsize / pixelSize))
     (row, col) = xyToRowCol(x, y, int(minX), int(numpy.ceil(maxY)), pixelSize)
 
     # Create digital surface model
@@ -56,7 +57,7 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     xVals = pxlCoords[0][~nullArray]
     yVals = pxlCoords[1][~nullArray]
     zVals = maxHeight[~nullArray]
-    dsm = interpolation.interpGrid(xVals, yVals, zVals, pxlCoords, 'pynn')
+    dsm = interpGrid(xVals, yVals, zVals, pxlCoords)
     dsm[numpy.isnan(dsm)] = nullVal
     dsm[~nullArray] = maxHeight[~nullArray]
     dsm = numpy.round(dsm.astype(numpy.float32), 3)
@@ -90,11 +91,10 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     A = A.astype(numpy.float64)
     nCols = A.shape[0]
     nRows = A.shape[1]
-    A = pmf.doNearestNeighbourInterp(A, noDataMask, nCols, nRows)
+    A = doNearestNeighbourInterp(A, noDataMask, nCols, nRows)
     winSize_tminus1 = numpy.zeros([winSize.shape[0]])
     winSize_tminus1[1:] = winSize[:-1]
-    A = pmf.doOpening(A, maxWinSize, winSize_tminus1, binGeoSize, slope, dh0,
-                      dhmax)
+    A = doOpening(A, maxWinSize, winSize_tminus1, binGeoSize, slope, dh0, dhmax)
     dem = ndimage.morphology.grey_dilation(A.astype(numpy.float32), size=(3,3))
     ############################################################################
     
@@ -102,7 +102,7 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     xVals = pxlCoords[0][~nullArray]
     yVals = pxlCoords[1][~nullArray]
     zVals = dem[~nullArray]
-    dem = interpolation.interpGrid(xVals, yVals, zVals, pxlCoords, 'pynn')
+    dem = interpGrid(xVals, yVals, zVals, pxlCoords)
     invalid = numpy.isnan(dem)
     nullVal = -999
     dem[invalid] = nullVal
@@ -148,9 +148,99 @@ def minGridding(grid, row, col, prop):
             grid[r, c] = prop[i]                             
 
 
+def interpGrid(xVals, yVals, zVals, gridCoords):
+    """
+    A function to interpolate values to a regular gridCoords given 
+    an irregular set of input data points
+    
+    Modified from pylidar/toolbox/interpolation.py
+    """
+    xVals = xVals.astype(numpy.float64)
+    yVals = yVals.astype(numpy.float64)
+    zVals = zVals.astype(numpy.float64)
+    if isinstance(gridCoords, numpy.ndarray):
+        gridCoords = gridCoords.astype(numpy.float64)
+    else:
+        gridCoords = (gridCoords[0].astype(numpy.float64),
+                      gridCoords[1].astype(numpy.float64))
+    
+    out = pynninterp.NaturalNeighbour(xVals, yVals, zVals, gridCoords[0], gridCoords[1])
+
+    return out
+
+
+
+def elevationDiffTreshold(c, wk, wk1, s, dh0, dhmax):
+    """
+    Function to determine the elevation difference threshold based on window
+    size (wk). c is the bin size is metres. Default values for site slope (s),
+    initial elevation differents (dh0), and maximum elevation difference
+    (dhmax). These will change based on environment.
+    
+    From pylidar/toolbox/grdfilters/pmf.py
+    """
+    if wk <= 3:
+        dht = dh0
+    elif wk > 3:
+        dht = s * (wk-wk1) * c + dh0
+    if dht > dhmax:
+        dht == dhmax
+    return dht
+
+
+def doNearestNeighbourInterp(data, noDataMask, m, n):
+    """
+    Function to do nearest neighbout interpolation of filling in no data area
+    
+    From pylidar/toolbox/grdfilters/pmf.py
+    """    
+    # array of (number of points, 2) containing the x,y coordinates of the valid values only
+    xx, yy = numpy.meshgrid(numpy.arange(data.shape[1]), numpy.arange(data.shape[0]))
+    xym = numpy.vstack( (numpy.ravel(xx[noDataMask]), numpy.ravel(yy[noDataMask])) ).T
+    
+    # the valid values in the first band,  as 1D arrays (in the same order as their coordinates in xym)
+    data0 = numpy.ravel( data[:,:][noDataMask] )
+       
+    # interpolator
+    interp = interpolate.NearestNDInterpolator( xym, data0 )
+    
+    # interpolate the whole image
+    result = interp(numpy.ravel(xx), numpy.ravel(yy)).reshape( xx.shape )
+    return result
+
+
+def doOpening(iarray, maxWindowSize, winSize1, c, s, dh0, dhmax):
+    """
+    A function to perform a series of iterative opening operations on the data
+    array with increasing window sizes.
+    
+    From pylidar/toolbox/grdfilters/pmf.py
+    """
+    wkIdx = 0
+    for wk in winSize1:
+        if wk <= maxWindowSize:
+            if wkIdx > 0:
+                wk1 = winSize1[wkIdx-1]
+            else:
+                wk1 = 0    
+            dht = elevationDiffTreshold(c, wk, wk1, s, dh0, dhmax)          
+            Z = iarray
+            
+            structureElement = disk(wk)
+            Zf = ndimage.morphology.grey_opening(Z, structure=structureElement, size=structureElement.shape)
+            
+            # Only replace the value if it's less than the specified height
+            # threshold or the zalue is less than the input
+            zDiff = numpy.absolute(Z - Zf)
+            iarray = numpy.where(numpy.logical_or(zDiff<=dht,Zf<Z), Zf, Z)           
+            wkIdx += 1            
+    return iarray 
+
+
 def disk(radius):
     """
     Generates a flat, disk-shaped structuring element.
+    From pylidar/toolbox/grdfilters/pmf.py
     """
     L = numpy.arange(-radius, radius + 1)
     X, Y = numpy.meshgrid(L, L)
@@ -225,61 +315,6 @@ def get_uneven_grid(xr, yr, xst, yst, psize):
     y_ids = numpy.rot90(y_ids, 3)
     pxlCoords = [x_ids, y_ids]
     return pxlCoords
-
-
-def readLidarPoints(filename, groundOnly=False, boundingbox=None,
-                    colNames=['X', 'Y', 'Z']):
-    """
-    Read the requested columns for the points in the given file, in a memory-
-    efficient manner.
-    """
-    datafiles = lidarprocessor.DataFiles()
-    datafiles.infile = lidarprocessor.LidarFile(filename, lidarprocessor.READ)
-    otherargs = lidarprocessor.OtherArgs()
-    otherargs.groundOnly = groundOnly
-    otherargs.colNames = colNames
-    otherargs.dataArrList = []
-    otherargs.boundingbox = boundingbox
-    controls = lidarprocessor.Controls()
-    controls.setSpatialProcessing(False)
-    lidarprocessor.doProcessing(selectColumns, datafiles, otherArgs=otherargs, controls=controls)
-    nPts = sum([len(a) for a in otherargs.dataArrList])
-    if nPts > 0:
-        fullArr = numpy.zeros(nPts, dtype=otherargs.dataArrList[0].dtype)
-        i = 0
-        for dataArr in otherargs.dataArrList:
-            numPts = len(dataArr)
-            fullArr[i:i+numPts] = dataArr
-            i += len(dataArr)
-    else:
-        fullArr = numpy.array([])
-    return fullArr
-
-
-def selectColumns(data, otherargs):
-    """
-    Called from pylidar's doProcessing. Read the next block of lidar points,
-    select out the requested columns. 
-    """
-    dataArr = data.infile.getPoints(colNames=otherargs.colNames)
-
-    if otherargs.groundOnly:
-        if 'CLASSIFICATION' in otherargs.colNames:
-            pntClass = data['CLASSIFICATION']
-        else:
-            pntClass = data.infile.getPoints(colNames='CLASSIFICATION')
-        mask = (pntClass == generic.CLASSIFICATION_GROUND)
-        dataArr = dataArr[mask]
-    
-    if otherargs.boundingbox is not None:
-        (xmin, xmax, ymin, ymax) = otherargs.boundingbox
-        (x, y) = (dataArr['X'], dataArr['Y'])
-        mask = ((x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax))
-        dataArr = dataArr[mask]
-
-    if len(dataArr) > 0:
-        # Stash in the list of arrays. 
-        otherargs.dataArrList.append(dataArr)
 
         
 def xyToRowCol(x, y, xMin, yMax, pixSize):
