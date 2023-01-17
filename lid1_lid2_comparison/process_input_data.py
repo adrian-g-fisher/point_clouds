@@ -2,6 +2,7 @@
 
 import os
 import glob
+import shutil
 
 dirNames = [r"baradine_201406_apron",   r"baradine_201407_lid1",
             r"goondiwindi_201501_lid1", r"goondiwindi_201506_lid2",
@@ -19,3 +20,9 @@ for i, dirName in enumerate(dirNames):
     outDir = os.path.join(r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data", dirName)
     cmd = "run_mergeTiles --indir %s --outdr %s --lazlist laztilelist.txt --tile_s 2000 --psize 1.0"%(inDir, outDir)
     os.system(cmd)
+
+    # Remove tile products
+    for lazFile in glob.glob(os.path.join(inDir, '*.laz')):
+        tempDir = lazFile.replace('.laz', '')
+        if os.path.exists(tempDir):
+            shutil.rmtree(tempDir)
