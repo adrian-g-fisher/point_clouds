@@ -22,7 +22,7 @@ dirNames = [r"baradine_201406_apron",   r"baradine_201407_lid1",
             r"gwabegar_201401_lid1",    r"gwabegar_201406_apron",
             r"katoomba_201804_lid1",    r"katoomba_201804_lid2"]
 
-with open('pulse_densities.csv', 'w') as f:
+with open(r'C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\pulse_densities.csv', 'w') as f:
     f.write('image,pulse_density\n')
 
 for i, dirName in enumerate(dirNames):
@@ -38,5 +38,5 @@ for i, dirName in enumerate(dirNames):
     controls.setFootprintType(applier.BOUNDS_FROM_REFERENCE)
     otherargs.values = None
     applier.apply(calcMeanPulseDensity, infiles, outfiles, otherArgs=otherargs, controls=controls)
-    with open('pulse_densities.csv', 'a') as f:
+    with open(r'C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\pulse_densities.csv', 'a') as f:
         f.write('%s,%f\n'%(os.path.basename(pulseDensityImage), numpy.mean(otherargs.values)))
