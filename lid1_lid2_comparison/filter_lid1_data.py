@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import glob
 import glob
 import numpy
@@ -102,10 +103,20 @@ dirNames = [r"baradine_201407_lid1",
 
 epsgCodes = [28355, 28356, 28355, 28356]
 
-pulseDensityList = [[200, 150, 100],
-                    [200, 150, 100],
-                    [200, 150, 100],
-                    [200, 150, 100]]
+# This lists the mean pulse densities for LID1, LID2/Apron by survey, which was
+# caclulated using get_pulse_densities.py and stored in 
+# C:\Users\Public\Documents\lid1_lid2_comparison\pulse_densities.csv
+pulseDensityMaxMin = [[155, 31],
+                      [168, 41],
+                      [241, 33],
+                      [227, 36]]
+
+pulseDensityList = []
+for p in pulseDensityMaxMin:
+    b = int((p[0] - p[1]) / 5.0)
+    pList = list(range(p[0], p[1], -b))
+    pList[-1] = p[1]
+    pulseDensityList.append(pList[1:])
 
 for i, dirName in enumerate(dirNames):
     inDir = os.path.join(r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data", dirName + r"\\laz")
@@ -118,7 +129,7 @@ for i, dirName in enumerate(dirNames):
     
     for pulseDensity in pulseDensityList[i]:
         
-        outDir = os.path.join(outBase, 'laz_%i'%pulseDensity)
+        outDir = os.path.join(outBase, 'laz_%03d'%pulseDensity)
         if not os.path.isdir(outDir):
             os.mkdir(outDir)
 
