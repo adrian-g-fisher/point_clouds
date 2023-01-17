@@ -6,14 +6,14 @@ import sys
 # Iterate through each project and run preprocess_als to create laz files with
 # names that can be used by the processing code.
 
-indirs = [r"E:\lid1_lid2_comparison\data\baradine_201407_lid1\las",
-          r"E:\lid1_lid2_comparison\data\baradine_201406_apron\las",
-          r"E:\lid1_lid2_comparison\data\goondiwindi_201501_lid1\las",
-          r"E:\lid1_lid2_comparison\data\goondiwindi_201506_lid2\las",
-          r"E:\lid1_lid2_comparison\data\gwabegar_201401_lid1\las",
-          r"E:\lid1_lid2_comparison\data\gwabegar_201406_apron\las",
-          r"E:\lid1_lid2_comparison\data\katoomba_201804_lid1\las",
-          r"E:\lid1_lid2_comparison\data\katoomba_201804_lid2\las"]
+indirs = [r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\baradine_201407_lid1\\las",
+          r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\baradine_201406_apron\\las",
+          r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\goondiwindi_201501_lid1\\las",
+          r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\goondiwindi_201506_lid2\\las",
+          r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\gwabegar_201401_lid1\\las",
+          r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\gwabegar_201406_apron\\las",
+          r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\katoomba_201804_lid1\\las",
+          r"C:\\Users\\Public\\Documents\\lid1_lid2_comparison\\input_data\\katoomba_201804_lid2\\las"]
 
 instruments = ["l1", "l1", "l1", "l1", "l1", "l1", "l4", "l4"]
 projects = ["BARAL1", "BARAAP", "GOONL1", "GOONL2", "GWABL1", "GWABAP", "KATAL1", "KATAL2"]
