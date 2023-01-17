@@ -6,7 +6,7 @@ import glob
 import glob
 import numpy
 import laspy
-from osgeo import osr
+from pyproj import crs
 from alsveg import rw_als_data
 from alsveg import gridding_interp_fns
 
@@ -82,9 +82,7 @@ def rec2las(outlaz, data, header, epsg):
     las = laspy.create(point_format=header.point_format, file_version=header.version)
     las.header.scales = header.scales
     las.header.offset = header.offset
-    proj = osr.SpatialReference()
-    proj.ImportFromEPSG(epsg)
-    las.header.add_crs(proj.ExportToWkt())
+    las.header.add_crs(crs.CRS.from_user_input(epsg))
     las.return_num = data['RETURN_NUMBER']
     las.num_returns = data['NUMBER_OF_RETURNS']
     las.gps_time = data['TIMESTAMP']
@@ -144,3 +142,4 @@ for i, dirName in enumerate(dirNames):
             # Write LAZ file with reduced point density
             outLaz = os.path.join(outDir, os.path.basename(inLaz))
             rec2las(outLaz, data, header, epsg)
+            print(outLaz)
