@@ -62,6 +62,8 @@ def filterByPulse(points, density):
             if numPulses > density:
                 selection = numpy.random.choice(ind, size=density, replace=False)
                 firstReturnsToKeep[selection] = 1
+            else:
+                firstReturnsToKeep[:] = 1
     
     # Set pointsToKeep to 1 for all subsequent returns by using NUMBER_OF_RETURNS
     pointsToKeep = numpy.copy(firstReturnsToKeep)
