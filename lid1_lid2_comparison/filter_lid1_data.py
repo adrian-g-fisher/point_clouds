@@ -63,7 +63,7 @@ def filterByPulse(points, density):
                 selection = numpy.random.choice(ind, size=density, replace=False)
                 firstReturnsToKeep[selection] = 1
             else:
-                firstReturnsToKeep[:] = 1
+                firstReturnsToKeep[ind] = 1
     
     # Set pointsToKeep to 1 for all subsequent returns by using NUMBER_OF_RETURNS
     pointsToKeep = numpy.copy(firstReturnsToKeep)
@@ -71,7 +71,9 @@ def filterByPulse(points, density):
     for i in uniqueNums:
         for j in range(1, i):
             ind = numpy.where((numberOfReturns == i) & (firstReturnsToKeep == 1))[0]
-            pointsToKeep[ind + j] = 1
+            indsToKeep = ind + j
+            indsToKeep = indsToKeep[indsToKeep < pointsToKeep.size]
+            pointsToKeep[indsToKeep] = 1
     
     return points[pointsToKeep == 1]
 
@@ -134,14 +136,18 @@ for i, dirName in enumerate(dirNames):
             os.mkdir(outDir)
 
         for inLaz in glob.glob(os.path.join(inDir, '*.laz')):
-            
-            # Read in inLaz
-            (data, header) = rw_als_data.laspy2rec(inLaz)
-
-            # Filter to desired number of pulses per 100m^2
-            data = filterByPulse(data, pulseDensity)
-
-            # Write LAZ file with reduced point density
             outLaz = os.path.join(outDir, os.path.basename(inLaz))
-            rec2las(outLaz, data, header, epsg)
-            print(outLaz)
+            if os.path.exists(outLaz) is True:
+                print(outLaz)
+
+            else:
+                # Read in inLaz
+                (data, header) = rw_als_data.laspy2rec(inLaz)
+
+                # Filter to desired number of pulses per 100m^2
+                data = filterByPulse(data, pulseDensity)
+
+                # Write LAZ file with reduced point density
+                rec2las(outLaz, data, header, epsg)
+                print(outLaz)
+            
