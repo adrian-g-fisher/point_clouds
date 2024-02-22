@@ -3,9 +3,8 @@ This is a collection of scripts for processing point clouds (LAS format files) f
 
 `conda config --add channels conda-forge`<br />
 `conda config --add channels rios`<br />
-`conda create -n lidar rios scipy numba rios::pynninterp`<br />
+`conda create -n lidar rios scipy numba rios::pynninterp laspy lazrs-python`<br />
 `conda activate lidar`<br />
-`pip install laspy[laszip]`
 
 ## Drone canopy height models
 To create a digital surface model (DSM), digital elevation model (DEM), and canopy height model (CHM) from a LAZ file point cloud produced by structure from

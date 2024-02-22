@@ -96,7 +96,7 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     winSize_tminus1 = numpy.zeros([winSize.shape[0]])
     winSize_tminus1[1:] = winSize[:-1]
     A = doOpening(A, maxWinSize, winSize_tminus1, binGeoSize, slope, dh0, dhmax)
-    dem = ndimage.morphology.grey_dilation(A.astype(numpy.float32), size=(3,3))
+    dem = ndimage.grey_dilation(A.astype(numpy.float32), size=(3,3))
     ############################################################################
     
     nullArray = (dem == nullVal)
@@ -228,7 +228,7 @@ def doOpening(iarray, maxWindowSize, winSize1, c, s, dh0, dhmax):
             Z = iarray
             
             structureElement = disk(wk)
-            Zf = ndimage.morphology.grey_opening(Z, structure=structureElement, size=structureElement.shape)
+            Zf = ndimage.grey_opening(Z, structure=structureElement, size=structureElement.shape)
             
             # Only replace the value if it's less than the specified height
             # threshold or the zalue is less than the input
@@ -349,7 +349,7 @@ def getCmdargs():
     p.add_argument("-s", "--pixelsize", dest="pixelsize", default=0.05,
                    help=("Pixelsize (m) for gridded outputs (default=0.05)"))
     p.add_argument("-w", "--windowsize", dest="windowsize", default=40,
-                   help=("Maximum filter window size in pixels (default=40"))
+                   help=("Max filter window size in pixels (default=40"))
     cmdargs = p.parse_args()
     if (cmdargs.inLaz is None or cmdargs.epsg is None or
         cmdargs.projectName is None or cmdargs.outDir is None):
