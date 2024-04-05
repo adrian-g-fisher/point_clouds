@@ -3,7 +3,7 @@
 
 conda create -n wbt -c conda-forge whitebox laspy lazrs-python
 
-x672700_y6073500.laz 672700 6072900 200 700
+The merging with wbt or laspy does not work!
 
 """
 
@@ -22,16 +22,25 @@ def append_to_las(in_las, out_las):
     """
     Appends in_laz points to out_laz
     """
+    las = laspy.read(in_las)
     with laspy.open(out_las, mode='a') as outlas:
-        with laspy.open(in_las) as inlas:
-            for points in inlas.chunk_iterator(2_000_000):
-                outlas.append_points(points)
+        outlas.append_points(las.points)
 
 
 def main(inFile, inDir, outDir, tileSize):
     """
     Main function to tile the data
     """
+
+    t = glob.glob(os.path.join(inDir, '*.laz'))
+    outLas = os.path.join(inDir, 'TEST.laz')
+    
+    shutil.copyfile(t[0], outLas)
+    for inLas in t[1:]:
+        append_to_las(inLas, outLas)
+    
+    sys.exit()
+    
     # Get all input files
     if inFile is None:
         tempList = glob.glob(os.path.join(inDir, "*"))
@@ -62,20 +71,26 @@ def main(inFile, inDir, outDir, tileSize):
         las = laspy.read(lasFile)
         x_min = int(numpy.min(las.x) / tileSize) * tileSize
         y_min = int(numpy.min(las.y) / tileSize) * tileSize
-        xyList.append('x%i_y%i'%(x_min, y_min))
+        xy = 'x%i_y%i'%(x_min, y_min)
+        xyList.append(xy)
+        x_max = math.ceil(numpy.max(las.x) / tileSize) * tileSize
+        y_max = math.ceil(numpy.max(las.y) / tileSize) * tileSize
+        x_size = x_max - x_min
+        y_size = y_max - y_min
+        print(os.path.basename(lasFile), xy, x_min, y_min, x_size, y_size)
     tileList = numpy.array(tileList)
     xyList = numpy.array(xyList)
     
     # Merge or copy tiles into outDir
-    for xy in numpy.unique(xyList):
-        outLas = os.path.join(outDir, '%s.laz'%xy)
-        t = tileList[xyList == xy]
-        if len(t) == 1:
-            shutil.copyfile(t[0], outLas)
-        else:
-            shutil.copyfile(t[0], outLas)
-            for inLas in t[1:]:
-                append_to_las(inLas, outLas)
+    #for xy in numpy.unique(xyList):
+    #    outLas = os.path.join(outDir, '%s.laz'%xy)
+    #    t = tileList[xyList == xy]
+    #    if len(t) == 1:
+    #        shutil.copyfile(t[0], outLas)
+    #    else:
+    #        shutil.copyfile(t[0], outLas)
+    #        for inLas in t[1:]:
+    #            append_to_las(inLas, outLas)
     
     # Check the extents of the final tiles
     for lasFile in glob.glob(os.path.join(outDir, "*.laz")):
