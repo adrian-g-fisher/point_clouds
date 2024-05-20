@@ -66,7 +66,7 @@ def merge_laz(inDir, outLaz):
         print("ERROR: outLaz cannot exist")
         sys.exit()
     
-    inLazList = glob.glob(os.path.join(inDir, "*.las"))
+    inLazList = glob.glob(os.path.join(inDir, "*.la*"))
     for i, lazFile in enumerate(inLazList):
         if i == 0:
             outData, outHeader = laz2rec(lazFile)
