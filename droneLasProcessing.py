@@ -125,7 +125,7 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     print("Processing completed")
 
 
-@jit(nopython=False)
+@jit(nopython=True)
 def maxGridding(grid, row, col, prop):
     """
     Create grid of maximum value of prop.
@@ -138,7 +138,7 @@ def maxGridding(grid, row, col, prop):
             grid[r, c] = prop[i]
 
 
-@jit(nopython=False)
+@jit(nopython=True)
 def minGridding(grid, row, col, prop):
     """
     Create grid of minimum value of prop.
@@ -350,7 +350,7 @@ def getCmdargs():
     p.add_argument("-s", "--pixelsize", dest="pixelsize", default=0.05,
                    help=("Pixelsize (m) for gridded outputs (default=0.05)"))
     p.add_argument("-w", "--windowsize", dest="windowsize", default=40,
-                   help=("Max filter window size in pixels (default=40"))
+                   help=("Max filter window size in pixels (default=40)"))
     cmdargs = p.parse_args()
     if (cmdargs.inLaz is None or cmdargs.epsg is None or
         cmdargs.projectName is None or cmdargs.outDir is None):
