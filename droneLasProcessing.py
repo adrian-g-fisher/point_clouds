@@ -17,6 +17,8 @@ from osgeo import osr
 from scipy import ndimage
 from scipy import interpolate
 
+gdal.UseExceptions()
+
 
 def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     """
@@ -123,7 +125,7 @@ def process_laz(lazFile, epsg, pixelSize, projName, outDir, maxWinSize):
     print("Processing completed")
 
 
-@jit
+@jit(nopython=False)
 def maxGridding(grid, row, col, prop):
     """
     Create grid of maximum value of prop.
@@ -136,7 +138,7 @@ def maxGridding(grid, row, col, prop):
             grid[r, c] = prop[i]
 
 
-@jit
+@jit(nopython=False)
 def minGridding(grid, row, col, prop):
     """
     Create grid of minimum value of prop.
@@ -168,7 +170,6 @@ def interpGrid(xVals, yVals, zVals, gridCoords):
     out = pynninterp.NaturalNeighbour(xVals, yVals, zVals, gridCoords[0], gridCoords[1])
 
     return out
-
 
 
 def elevationDiffTreshold(c, wk, wk1, s, dh0, dhmax):
