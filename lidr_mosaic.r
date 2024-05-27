@@ -8,6 +8,9 @@ option_list = list(
                 help="Directory with input las files"),
 	make_option(c("-o", "--outFile"), type="character", default=NULL, 
                 help="Output mosaic TIF file"),
+	make_option(c("-p", "--pixelSize"), type="numeric", default=0.1, 
+                help="Pixel size (m) for output TIF file"))	
+
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 if (is.null(opt$inDir)){
@@ -19,17 +22,13 @@ if (is.null(opt$outFile)){
 
 inDir <- opt$inDir
 outFile <- opt$outFile
+pixelSize <- opt$pixelSize
 
-# returns the RGB values for the highest points
-RGBZ <- function(r,g,b,z) {
-  bands = list(
-    R = r[which.max(z)],
-    G = g[which.max(z)],
-    B = b[which.max(z)]
-  )
-  return(bands)
-}
+RGBZ <- function(r, g, b, z) {
+	maxZ <- which.max(z)
+	bands = list(R = r[maxZ], G = g[maxZ], B = b[maxZ])
+	return(bands)}
 
 points <- readLAScatalog(inDir)
-ortho <- grid_metrics(points, ~RGBZ(R,G,B,Z), res = 0.1)
-writeRaster(ortho, outFile)
+RGB <- grid_metrics(points, ~RGBZ(R, G, B, Z), res=pixelSize)
+outFile <- as.raster(RGB)

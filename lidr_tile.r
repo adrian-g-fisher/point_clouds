@@ -19,7 +19,10 @@ option_list = list(
 	make_option(c("-o", "--outDir"), type="character", default=NULL, 
                 help="Directory for output las files"),
 	make_option(c("-t", "--tileSize"), type="numeric", default=NULL, 
-                help="Tile size (m) for output las files"))
+                help="Tile size (m) for output las files"),
+	make_option(c("-c", "--classify"), action="store_true", default=FALSE, 
+                help="Classify ground with progressive morphological filter"))
+				
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 if (is.null(opt$inDir)){
@@ -35,12 +38,20 @@ if (is.null(opt$tileSize)){
 inDir <- opt$inDir
 outDir <- opt$outDir
 tileSize <- opt$tileSize
+classify <- opt$classify
 
 ctg = readLAScatalog(inDir)
-opt_chunk_buffer(ctg) <- 0
 opt_chunk_size(ctg) <- tileSize
 opt_laz_compression(ctg) <- TRUE
 opt_filter(ctg) <- ""
 opt_chunk_alignment(ctg) <- c(0, 0)
 opt_output_files(ctg) <- paste0(outDir, "/retile_{XLEFT}_{YBOTTOM}")
+
+if (classify == TRUE) {
+	opt_chunk_buffer(ctg) <- 20
+	ws <- seq(3, 12, 3)
+	th <- seq(0.1, 1.5, length.out=length(ws))
+	ctg <- classify_ground(ctg, algorithm=pmf(ws=ws, th=th))}
+
+opt_chunk_buffer(ctg) <- 0
 newctg = catalog_retile(ctg)
