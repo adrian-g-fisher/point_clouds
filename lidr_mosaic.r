@@ -1,6 +1,7 @@
-# conda create -n lidr -c conda-forge r-lidr
+# conda create -n lidr -c conda-forge r-lidr r-future r-rgdal r-codetools r-optparse
 
 library(lidR)
+library(terra)
 library(optparse)
 
 option_list = list(
@@ -31,4 +32,4 @@ RGBZ <- function(r, g, b, z) {
 
 points <- readLAScatalog(inDir)
 RGB <- grid_metrics(points, ~RGBZ(R, G, B, Z), res=pixelSize)
-outFile <- as.raster(RGB)
+writeRaster(RGB, outFile)
