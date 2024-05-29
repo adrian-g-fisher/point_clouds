@@ -3,6 +3,7 @@
 library(lidR)
 library(terra)
 library(optparse)
+library(future)
 
 option_list = list(
 	make_option(c("-i", "--inDir"), type="character", default=NULL, 
@@ -31,5 +32,6 @@ RGBZ <- function(r, g, b, z) {
 	return(bands)}
 
 points <- readLAScatalog(inDir)
+plan(multisession, workers=8L) # 8 cores
 RGB <- grid_metrics(points, ~RGBZ(R, G, B, Z), res=pixelSize)
 writeRaster(RGB, outFile)

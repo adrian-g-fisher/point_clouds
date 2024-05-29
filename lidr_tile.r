@@ -12,6 +12,7 @@
 
 library(lidR)
 library(optparse)
+library(future)
 
 option_list = list(
 	make_option(c("-i", "--inDir"), type="character", default=NULL, 
