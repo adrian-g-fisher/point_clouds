@@ -38,12 +38,11 @@ inDir <- opt$inDir
 outDir <- opt$outDir
 tileSize <- opt$tileSize
 
-ctg = readLAScatalog(inDir)
+ctg <- readLAScatalog(inDir)
 plan(multisession, workers=8L) # 8 cores
 opt_chunk_buffer(ctg) <- 0
 opt_chunk_size(ctg) <- tileSize
 opt_laz_compression(ctg) <- TRUE
-opt_filter(ctg) <- ""
 opt_chunk_alignment(ctg) <- c(0, 0)
 opt_output_files(ctg) <- paste0(outDir, "/retile_{XLEFT}_{YBOTTOM}")
-newctg = catalog_retile(ctg)
+newctg <- catalog_retile(ctg)
