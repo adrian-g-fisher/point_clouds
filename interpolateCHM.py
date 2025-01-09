@@ -15,6 +15,10 @@ References
 Shamsoddini, A., Turner, R., & Trinder, J.C. (2013). Improving lidar-based
 forest structure mapping with crown-level pit removal. Journal of Spatial
 Science, 58, 29-51, http://dx.doi.org/10.1080/14498596.2012.759092
+
+This needs:
+conda create -n lidar rios scipy numba rios::pynninterp laspy lazrs-python
+
 """
 
 import sys

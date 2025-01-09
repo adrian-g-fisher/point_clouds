@@ -2,7 +2,8 @@
 """
 Merges multiple LAZ files and creates a new LAZ file with all data.
 
-conda create -n als -c conda-forge laspy lazrs-python
+This needs:
+conda create -n lidar rios scipy numba rios::pynninterp laspy lazrs-python
 
 """
 
