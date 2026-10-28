@@ -1,4 +1,4 @@
-# conda create -n lidr -c conda-forge r-lidr r-future r-rgdal r-codetools r-optparse
+#conda create -n lidr -c conda-forge r-lidr r-future r-rgdal r-codetools r-optparse r-dplyr
 
 library(lidR)
 library(terra)
@@ -10,7 +10,7 @@ option_list = list(
                 help="Directory with input las files"),
 	make_option(c("-o", "--outFile"), type="character", default=NULL, 
                 help="Output mosaic TIF file"),
-	make_option(c("-p", "--pixelSize"), type="numeric", default=0.1, 
+	make_option(c("-s", "--pixelSize"), type="numeric", default=0.1, 
                 help="Pixel size (m) for output TIF file"))	
 
 opt_parser <- OptionParser(option_list=option_list)
