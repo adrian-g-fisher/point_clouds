@@ -45,8 +45,10 @@ option_list = list(
 	make_option(c("-o", "--outDir"), type="character", default=NULL, 
                 help="Directory for output las files"),
 	make_option(c("-r", "--res"), type="numeric", default=0.1, 
-                help="Resolution (m) for minimum elevation grid (default=0.1)"))
-
+                help="Resolution (m) for minimum elevation grid (default=0.1)"),
+	make_option(c("-x", "--prefix"), type="character", default=NULL, 
+                help="Prefix for output las files"))
+				
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 if (is.null(opt$inDir)){
@@ -55,14 +57,19 @@ if (is.null(opt$inDir)){
 if (is.null(opt$outDir)){
   print_help(opt_parser)
   stop("Must supply outDir")}
-
+if (is.null(opt$prefix)){
+  print_help(opt_parser)
+  stop("Must supply prefix")}
+  
 inDir <- opt$inDir
 outDir <- opt$outDir
 res <- opt$res
+prefix <- opt$prefix
 
 ctg = readLAScatalog(inDir)
 plan(multisession, workers=8)
+opt_chunk_size(ctg) <- 100
 opt_chunk_buffer(ctg) <- 20
 opt_laz_compression(ctg) <- TRUE
-opt_output_files(ctg) <- paste0(outDir, "/{*}_classified")
+opt_output_files(ctg) <- paste0(outDir, "/", prefix, "_{XLEFT}_{YTOP}_classified")
 output <- minZ_pmf(ctg, res=res)
